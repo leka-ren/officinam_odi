@@ -22,6 +22,7 @@ func StartPage(res http.ResponseWriter, req *http.Request) {
 func UploadForm(res http.ResponseWriter, req *http.Request) {
 	if req.Method != http.MethodPost {
 		http.Error(res, "method POST only available", http.StatusMethodNotAllowed)
+		return
 	}
 
 	err := req.ParseMultipartForm(5 << 20)
@@ -30,7 +31,7 @@ func UploadForm(res http.ResponseWriter, req *http.Request) {
 		http.Error(res, err.Error(), http.StatusBadRequest)
 	}
 
-	file, handler, err := req.FormFile("myFile")
+	file, header, err := req.FormFile("myFile")
 
 	if err != nil {
 		http.Error(res, err.Error(), http.StatusBadRequest)
@@ -46,7 +47,7 @@ func UploadForm(res http.ResponseWriter, req *http.Request) {
 
 	convertedData := service.Сonversion(string(dataFromFile))
 
-	fileName := time.Now().UTC().String() + filepath.Ext(handler.Filename)
+	fileName := time.Now().UTC().String() + filepath.Ext(header.Filename)
 
 	_, err = os.Create(fileName)
 
@@ -56,5 +57,9 @@ func UploadForm(res http.ResponseWriter, req *http.Request) {
 	}
 
 	res.WriteHeader(http.StatusOK)
-	res.Write([]byte(convertedData))
+	_, err = res.Write([]byte(convertedData))
+
+	if err != nil {
+		http.Error(res, err.Error(), http.StatusInternalServerError)
+	}
 }
